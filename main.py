@@ -1,28 +1,32 @@
 from graphics import *
 import sys
+import threading
 
-def main():
-    num_rows = 12
-    num_cols = 16
-    margin = 50
+def main(color="red"):
+    num_rows = 50
+    num_cols = 50
+    margin = 16
     screen_x = 800
-    screen_y = 600
+    screen_y = 800
     cell_size_x = (screen_x - 2 * margin) / num_cols
     cell_size_y = (screen_y - 2 * margin) / num_rows
     sys.setrecursionlimit(10000)
-    win = Window(screen_x, screen_y)
+    win = Window(screen_x, screen_y, MazeName=color)
 
     maze = Maze(margin, margin, num_rows, num_cols, cell_size_x, cell_size_y, win)
     print("maze created")
     is_solvable = maze.solve()
-    if not is_solvable:
-        print("maze can not be solved!")
-    else:
-        print("maze solved!")
+    if is_solvable:
+        print(f"solved {color}")
+    
 
     win.wait_for_close()
 
 
+def thread():
+    thread1 = threading.Thread(target=main)
+    thread2 = threading.Thread(target=main, args=("blue",))
+    thread1.start()
+    thread2.start()
 
-
-main()
+thread()

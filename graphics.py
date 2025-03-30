@@ -3,7 +3,7 @@ import time
 import random
 
 class Window:
-    def __init__(self, width, height):
+    def __init__(self, width, height, MazeName="red"):
         self.__root = Tk()
         self.__root.title("Maze solv")
 
@@ -11,9 +11,14 @@ class Window:
 
         self.__canvas = Canvas(self.__root, bg="white", width=width, height=height)
         self.__canvas.pack(fill=BOTH, expand=1)
+        self.MazeName = MazeName
 
         self.__running = False
         
+    def update_title(self, title):
+        self.__root.title(title)
+    def get_root(self):
+        return self.__root
 
     def redraw(self):
         self.__root.update_idletasks()
@@ -29,7 +34,10 @@ class Window:
         self.__running = False
 
     def draw_line(self, line, fill_color="black"):
-        line.draw(self.__canvas, fill_color)
+        if fill_color == "black":
+            line.draw(self.__canvas, fill_color)
+        else:
+            line.draw(self.__canvas, fill_color, size=2)
 
 class Point:
     def __init__(self, x, y): #x0 y0 is topleft corner
@@ -41,8 +49,8 @@ class Line:
         self.point1 = point1
         self.point2 = point2
     
-    def draw(self, canvas, fill_color="black"):
-        canvas.create_line(self.point1.x, self.point1.y, self.point2.x, self.point2.y, fill=fill_color, width = 5)
+    def draw(self, canvas, fill_color="black", size=1):
+        canvas.create_line(self.point1.x, self.point1.y, self.point2.x, self.point2.y, fill=fill_color, width=size)
 
 class Cell:
     def __init__(self, win=None):
@@ -100,7 +108,7 @@ class Cell:
         middle_y = (self._y1 + self._y2)/2
         target_middle_x = (to_cell._x1 + to_cell._x2)/2
         target_middle_y = (to_cell._y1 + to_cell._y2)/2
-        fill_color = "red"
+        fill_color = self._win.MazeName
         if undo:
              fill_color = "gray"
 
@@ -159,7 +167,13 @@ class Maze:
         if self.win is None:
             return
         self.win.redraw()
-        time.sleep(0.01)
+        #time.sleep(0.001) #delay
+
+    def _animate_solve(self):
+        if self.win is None:
+            return
+        self.win.redraw()
+        time.sleep(0.02) #delay
 
     def _break_entrance_and_exit(self): #can add logic to decide which side to remove, for now removes only top  from 0,0 and bot from num, num
         self._cells[0][0].has_top_wall = False
@@ -211,10 +225,24 @@ class Maze:
 
 
     def solve(self):
-        return self._solve_r(0,0)
+        def update_timer():
+            _elapsed = time.time() - start_time
+            if self.win:
+                self.win.update_title(f"{self.win.MazeName}: {_elapsed:.2f}")
+            self.win.redraw()
+            if not self._cells[self.num_cols - 1][self.num_rows - 1].visited:
+                self.win.get_root().after(50, update_timer)
+
+        start_time = time.time()
+        update_timer()
+
+        is_solved = self._solve_r(0,0)
+
+        #end_time = time.time()
+        return is_solved
 
     def _solve_r(self, i, j):
-        self._animate()
+        self._animate_solve()
         self._cells[i][j].visited = True
 
         if i == self.num_cols - 1 and j == self.num_rows -1:
